@@ -1,0 +1,27 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/minimarket_db}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      pool-name: MinimarketHikariPool
+      minimum-idle: ${DB_POOL_MIN_SIZE:2}
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
+      connection-timeout: ${DB_CONNECTION_TIMEOUT_MS:30000}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    clean-disabled: true
+
+logging:
+  level:
+    com.minimarket: ${LOG_LEVEL_APP:DEBUG}
+
+security:
+  documentation-public: true
+  jwt:
+    secret-base64: ${JWT_SECRET_BASE64:bWluaW1hcmtldC1sb2NhbC1kZXZlbG9wbWVudC1zZWNyZXQtMzItYnl0ZXM=}

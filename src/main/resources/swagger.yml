@@ -1,0 +1,1770 @@
+openapi: 3.1.0
+info:
+  title: Minimarket API
+  version: 4.0.0
+  description: API REST segura para catálogo, usuarios y ventas rápidas del minimercado familiar.
+servers:
+  - url: http://localhost:8080
+    description: Entorno local
+tags:
+  - name: System
+    description: Información técnica de disponibilidad
+  - name: Categories
+    description: Administración y consulta de categorías
+  - name: Products
+    description: Administración y consulta de productos activos
+  - name: Authentication
+    description: Autenticación y gestión de sesiones
+  - name: Users
+    description: Administración de usuarios, exclusiva para ADMIN
+  - name: Sales
+    description: Previsualización, registro e historial de ventas para ADMIN y VENDEDOR
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/auth/login:
+    post:
+      tags: [Authentication]
+      summary: Iniciar sesión
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginApiRequest'
+      responses:
+        '200':
+          description: Autenticación exitosa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginApiResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Renovar una sesión y rotar el refresh token
+      operationId: refreshSession
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenApiRequest'
+      responses:
+        '200':
+          description: Sesión renovada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshSessionApiResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Cerrar la sesión actual
+      description: Requiere cualquier usuario autenticado. El access token puede seguir vigente hasta su expiración.
+      operationId: logout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenApiRequest'
+      responses:
+        '200':
+          description: Sesión cerrada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyApiResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/auth/me:
+    get:
+      tags: [Authentication]
+      summary: Consultar el usuario autenticado
+      operationId: getAuthenticatedUser
+      responses:
+        '200':
+          description: Usuario autenticado obtenido correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthenticatedUserApiResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/system/info:
+    get:
+      tags: [System]
+      summary: Consultar información técnica del sistema
+      operationId: getSystemInfo
+      responses:
+        '200':
+          description: Información del sistema obtenida correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemInfoApiResponse'
+              example:
+                statusCode: 200
+                message: Información del sistema obtenida correctamente
+                data:
+                  application: minimarket-api
+                  status: UP
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/categories:
+    post:
+      tags: [Categories]
+      summary: Registrar una categoría
+      operationId: createCategory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryCreateApiRequest'
+            example:
+              data:
+                name: Lácteos
+                description: Leches, yogures y derivados
+      responses:
+        '201':
+          description: Categoría registrada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryApiResponse'
+              example:
+                statusCode: 201
+                message: Categoría registrada correctamente
+                data:
+                  id: 1
+                  name: Lácteos
+                  description: Leches, yogures y derivados
+                  active: true
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    get:
+      tags: [Categories]
+      summary: Listar categorías activas
+      operationId: findActiveCategories
+      responses:
+        '200':
+          description: Categorías encontradas correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryListApiResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/products:
+    post:
+      tags: [Products]
+      summary: Registrar un producto
+      operationId: createProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductCreateApiRequest'
+            example:
+              data:
+                name: Leche Gloria
+                description: Leche evaporada 400 g
+                barcode: '7751234567890'
+                price: 4.50
+                purchasePrice: 3.00
+                presentation: LATA
+                contentQuantity: 400
+                contentUnit: GR
+                categoryId: 1
+                unitOfMeasure: UND
+      responses:
+        '201':
+          description: Producto registrado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductApiResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    get:
+      tags: [Products]
+      summary: Listar productos activos
+      operationId: findActiveProducts
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: Productos encontrados correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductPageApiResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/products/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ProductId'
+    get:
+      tags: [Products]
+      summary: Consultar un producto activo por ID
+      operationId: findProductById
+      responses:
+        '200':
+          description: Producto encontrado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductApiResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    put:
+      tags: [Products]
+      summary: Actualizar un producto
+      description: Reemplaza todos los datos editables del producto. Los campos opcionales omitidos o enviados como null se almacenan como NULL, permitiendo eliminar presentación y contenido.
+      operationId: updateProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductUpdateApiRequest'
+      responses:
+        '200':
+          description: Producto actualizado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductApiResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      tags: [Products]
+      summary: Desactivar un producto
+      description: Realiza una desactivación lógica; no elimina físicamente el registro.
+      operationId: deactivateProduct
+      responses:
+        '204':
+          description: Producto desactivado correctamente; la respuesta no contiene cuerpo.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/products/search:
+    get:
+      tags: [Products]
+      summary: Buscar productos activos por nombre
+      description: Realiza una búsqueda parcial sin distinguir mayúsculas y minúsculas.
+      operationId: searchProductsByName
+      parameters:
+        - name: name
+          in: query
+          required: true
+          description: Fragmento del nombre; se ignoran espacios al inicio y al final.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 160
+          example: arroz
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: Búsqueda completada; puede contener una lista vacía.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductPageApiResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/products/barcode/{barcode}:
+    get:
+      tags: [Products]
+      summary: Buscar un producto activo por código de barras
+      description: La coincidencia es exacta y conserva los ceros iniciales.
+      operationId: findProductByBarcode
+      parameters:
+        - name: barcode
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 64
+            pattern: '^\S+$'
+          example: '0012345678905'
+      responses:
+        '200':
+          description: Producto encontrado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductApiResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/products/{id}/price:
+    parameters:
+      - $ref: '#/components/parameters/ProductId'
+    patch:
+      tags: [Products]
+      summary: Actualizar únicamente el precio de un producto
+      operationId: updateProductPrice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductPriceUpdateApiRequest'
+            example:
+              data:
+                price: 5.20
+      responses:
+        '200':
+          description: Precio actualizado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductApiResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/users:
+    post:
+      tags: [Users]
+      summary: Crear un usuario
+      description: Requiere rol ADMIN. No existe registro público.
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreateApiRequest'
+      responses:
+        '201':
+          description: Usuario registrado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserApiResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    get:
+      tags: [Users]
+      summary: Listar usuarios
+      description: Requiere rol ADMIN.
+      operationId: findUsers
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: Usuarios encontrados correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPageApiResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/users/{id}:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    get:
+      tags: [Users]
+      summary: Consultar un usuario
+      description: Requiere rol ADMIN.
+      operationId: findUserById
+      responses:
+        '200':
+          description: Usuario encontrado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserApiResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/users/{id}/status:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    patch:
+      tags: [Users]
+      summary: Activar o desactivar un usuario
+      description: Requiere rol ADMIN. No permite desactivar al último ADMIN activo y revoca sesiones al desactivar.
+      operationId: updateUserStatus
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserStatusApiRequest'
+      responses:
+        '200':
+          description: Estado actualizado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserApiResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/users/{id}/role:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    patch:
+      tags: [Users]
+      summary: Cambiar el rol de un usuario
+      description: Requiere rol ADMIN. Impide cambiar el rol propio o degradar al último ADMIN activo.
+      operationId: updateUserRole
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRoleApiRequest'
+      responses:
+        '200':
+          description: Rol actualizado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserApiResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/users/{id}/reset-password:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    post:
+      tags: [Users]
+      summary: Restablecer administrativamente la contraseña
+      description: Requiere rol ADMIN y revoca todos los refresh tokens activos del usuario.
+      operationId: resetUserPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetApiRequest'
+      responses:
+        '200':
+          description: Contraseña restablecida correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyApiResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/sales/preview:
+    post:
+      tags: [Sales]
+      summary: Previsualizar una venta con precios vigentes
+      description: Disponible para ADMIN y VENDEDOR. Calcula en PEN sin persistir ni reservar precios.
+      operationId: previewSale
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaleApiRequest'
+            example:
+              data:
+                items:
+                  - productId: 1
+                    quantity: 2
+                  - productId: 5
+                    quantity: 0.500
+      responses:
+        '200':
+          description: Venta calculada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalePreviewApiResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableContent' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /api/v1/sales:
+    post:
+      tags: [Sales]
+      summary: Registrar una venta
+      description: Disponible para ADMIN y VENDEDOR. Recalcula precios y guarda cabecera y detalles atómicamente.
+      operationId: registerSale
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaleApiRequest'
+      responses:
+        '201':
+          description: Venta registrada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaleApiResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/UnprocessableContent' }
+        '500': { $ref: '#/components/responses/InternalError' }
+    get:
+      tags: [Sales]
+      summary: Consultar historial paginado de ventas
+      description: ADMIN puede consultar el historial global; VENDEDOR queda restringido a sus propias ventas.
+      operationId: findSaleHistory
+      parameters:
+        - $ref: '#/components/parameters/FromDate'
+        - $ref: '#/components/parameters/ToDate'
+        - $ref: '#/components/parameters/SaleUserId'
+        - $ref: '#/components/parameters/SaleStatusFilter'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: Historial de ventas obtenido correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalePageApiResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /api/v1/sales/summary:
+    get:
+      tags: [Sales]
+      summary: Obtener resumen global de ventas completadas
+      description: Exclusivo para ADMIN. COUNT y SUM se calculan en PostgreSQL; las ventas CANCELLED se excluyen.
+      operationId: summarizeSales
+      parameters:
+        - $ref: '#/components/parameters/FromDate'
+        - $ref: '#/components/parameters/ToDate'
+      responses:
+        '200':
+          description: Resumen de ventas obtenido correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaleSummaryApiResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /api/v1/sales/{id}:
+    parameters:
+      - $ref: '#/components/parameters/SaleId'
+    get:
+      tags: [Sales]
+      summary: Consultar el detalle histórico de una venta
+      description: ADMIN consulta cualquier venta; VENDEDOR sólo una venta propia.
+      operationId: findSaleById
+      responses:
+        '200':
+          description: Venta encontrada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaleApiResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    ProductId:
+      name: id
+      in: path
+      required: true
+      description: Identificador del producto.
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+    UserId:
+      name: id
+      in: path
+      required: true
+      description: Identificador del usuario.
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+    SaleId:
+      name: id
+      in: path
+      required: true
+      description: Identificador de la venta.
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Clave única por usuario y operación. Un reintento equivalente devuelve la venta original.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+      example: 550e8400-e29b-41d4-a716-446655440000
+    FromDate:
+      name: from
+      in: query
+      description: Fecha inicial inclusiva en la zona America/Lima.
+      schema:
+        type: string
+        format: date
+    ToDate:
+      name: to
+      in: query
+      description: Fecha final inclusiva en la zona America/Lima.
+      schema:
+        type: string
+        format: date
+    SaleUserId:
+      name: userId
+      in: query
+      description: Filtro por usuario. ADMIN puede elegirlo; VENDEDOR sólo puede indicar su propio ID.
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+    SaleStatusFilter:
+      name: status
+      in: query
+      description: Estado de venta opcional.
+      schema:
+        $ref: '#/components/schemas/SaleStatus'
+    Page:
+      name: page
+      in: query
+      description: Índice de página basado en cero.
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    Size:
+      name: size
+      in: query
+      description: Cantidad máxima de elementos por página.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+  responses:
+    Unauthorized:
+      description: No existe una autenticación válida o la credencial de sesión es inválida.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorApiResponse'
+          example:
+            statusCode: 401
+            message: No autenticado
+            data:
+              code: UNAUTHORIZED
+              timestamp: '2026-10-08T15:00:00Z'
+              path: /api/v1/products
+              traceId: abc123
+    Forbidden:
+      description: El usuario está autenticado pero no tiene el rol requerido.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorApiResponse'
+          example:
+            statusCode: 403
+            message: No tiene permisos para realizar esta operación
+            data:
+              code: FORBIDDEN
+              timestamp: '2026-10-08T15:00:00Z'
+              path: /api/v1/users
+              traceId: abc123
+    BadRequest:
+      description: Solicitud, JSON o parámetros inválidos.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorApiResponse'
+          example:
+            statusCode: 400
+            message: Error de validación
+            data:
+              code: VALIDATION_ERROR
+              timestamp: '2026-10-08T10:30:00Z'
+              path: /api/v1/products
+              traceId: abc123
+              errors:
+                - field: price
+                  message: El precio debe ser mayor que cero
+    NotFound:
+      description: El recurso solicitado no existe o no está activo.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorApiResponse'
+          example:
+            statusCode: 404
+            message: Producto no encontrado
+            data:
+              code: PRODUCT_NOT_FOUND
+              timestamp: '2026-10-08T10:30:00Z'
+              path: /api/v1/products/999
+              traceId: abc123
+    Conflict:
+      description: Conflicto por categoría o código de barras duplicado.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorApiResponse'
+          example:
+            statusCode: 409
+            message: Ya existe un producto con ese código de barras
+            data:
+              code: BARCODE_ALREADY_EXISTS
+              timestamp: '2026-10-08T10:30:00Z'
+              path: /api/v1/products
+              traceId: abc123
+    UnprocessableContent:
+      description: La solicitud es válida sintácticamente, pero incumple una regla de negocio.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorApiResponse'
+    InternalError:
+      description: Error interno inesperado sin exposición de detalles técnicos.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorApiResponse'
+          example:
+            statusCode: 500
+            message: Ocurrió un error interno inesperado
+            data:
+              code: INTERNAL_ERROR
+              timestamp: '2026-10-08T10:30:00Z'
+              path: /api/v1/products
+              traceId: abc123
+
+  schemas:
+    ApiRequest:
+      type: object
+      description: Envoltorio obligatorio para los cuerpos JSON de entrada.
+      required: [data]
+      properties:
+        data:
+          type: object
+    ApiResponse:
+      type: object
+      description: Envoltorio estándar para todas las respuestas con cuerpo.
+      required: [statusCode, message, data]
+      properties:
+        statusCode:
+          type: integer
+        message:
+          type: string
+        data: {}
+    LoginApiRequest:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/LoginRequest'
+    RefreshTokenApiRequest:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/RefreshTokenRequest'
+    UserCreateApiRequest:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/UserCreateRequest'
+    UserStatusApiRequest:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/UserStatusUpdateRequest'
+    UserRoleApiRequest:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/UserRoleUpdateRequest'
+    PasswordResetApiRequest:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/PasswordResetRequest'
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          minLength: 1
+          maxLength: 80
+          example: vendedor01
+        password:
+          type: string
+          format: password
+          minLength: 1
+          maxLength: 200
+          writeOnly: true
+          example: MiPasswordSegura123!
+    RefreshTokenRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+          minLength: 1
+          maxLength: 200
+          writeOnly: true
+    UserCreateRequest:
+      type: object
+      required: [username, password, fullName, role]
+      properties:
+        username:
+          type: string
+          minLength: 1
+          maxLength: 80
+          pattern: '^\S+$'
+          example: familiar01
+        password:
+          type: string
+          format: password
+          minLength: 12
+          maxLength: 128
+          writeOnly: true
+          description: Debe contener mayúscula, minúscula, número y símbolo.
+          example: PasswordSegura123!
+        fullName:
+          type: string
+          minLength: 1
+          maxLength: 160
+          example: Familiar Uno
+        role:
+          $ref: '#/components/schemas/UserRole'
+    UserStatusUpdateRequest:
+      type: object
+      required: [active]
+      properties:
+        active:
+          type: boolean
+    UserRoleUpdateRequest:
+      type: object
+      required: [role]
+      properties:
+        role:
+          $ref: '#/components/schemas/UserRole'
+    PasswordResetRequest:
+      type: object
+      required: [newPassword]
+      properties:
+        newPassword:
+          type: string
+          format: password
+          minLength: 12
+          maxLength: 128
+          writeOnly: true
+          example: NuevaPassword123!
+    CategoryCreateApiRequest:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/CategoryCreateRequest'
+    ProductCreateApiRequest:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ProductCreateRequest'
+    ProductUpdateApiRequest:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ProductUpdateRequest'
+    ProductPriceUpdateApiRequest:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ProductPriceUpdateRequest'
+    CategoryCreateRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: [string, 'null']
+          maxLength: 500
+    ProductCreateRequest:
+      type: object
+      required: [name, price, categoryId, unitOfMeasure]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 160
+        description:
+          type: [string, 'null']
+          maxLength: 500
+        barcode:
+          type: [string, 'null']
+          minLength: 1
+          maxLength: 64
+          pattern: '^\S+$'
+        price:
+          type: number
+          format: double
+          exclusiveMinimum: 0
+          multipleOf: 0.01
+        purchasePrice:
+          type: [number, 'null']
+          format: double
+          exclusiveMinimum: 0
+          multipleOf: 0.01
+          description: Precio de compra actual; es opcional para permitir una adopción gradual.
+        presentation:
+          type: [string, 'null']
+          maxLength: 30
+          description: Tipo de envase o presentación comercial. Una cadena vacía se normaliza a NULL.
+          example: LATA
+        packagingMaterial:
+          type: [string, 'null']
+          maxLength: 30
+          description: Material del envase o empaque.
+          example: VIDRIO
+        contentQuantity:
+          type: [number, 'null']
+          exclusiveMinimum: 0
+          maximum: 999999999.999
+          multipleOf: 0.001
+          description: Cantidad contenida en la presentación. Debe enviarse junto con contentUnit.
+          example: 400
+        contentUnit:
+          type: [string, 'null']
+          maxLength: 10
+          description: Unidad del contenido, distinta de unitOfMeasure. Debe enviarse junto con contentQuantity; una cadena vacía se normaliza a NULL.
+          example: GR
+        variant:
+          type: [string, 'null']
+          maxLength: 60
+          description: Variante comercial, por ejemplo Talla G, Lata o Sin azúcar.
+          example: Talla G
+        unitsPerPackage:
+          type: [integer, 'null']
+          minimum: 1
+          description: Número de unidades incluidas en la presentación.
+          example: 20
+        unitContentQuantity:
+          type: [number, 'null']
+          exclusiveMinimum: 0
+          maximum: 999999999.999
+          multipleOf: 0.001
+          description: Contenido de cada unidad incluida; debe enviarse junto con unitContentUnit.
+          example: 355
+        unitContentUnit:
+          type: [string, 'null']
+          maxLength: 10
+          description: Unidad del contenido individual.
+          example: ML
+        categoryId:
+          type: integer
+          format: int64
+          minimum: 1
+        unitOfMeasure:
+          $ref: '#/components/schemas/UnitOfMeasure'
+    ProductUpdateRequest:
+      $ref: '#/components/schemas/ProductCreateRequest'
+    ProductPriceUpdateRequest:
+      type: object
+      required: [price]
+      properties:
+        price:
+          type: number
+          format: double
+          exclusiveMinimum: 0
+          multipleOf: 0.01
+    UnitOfMeasure:
+      type: string
+      enum: [UND, KG, GR, LT, ML, PACK]
+    UserRole:
+      type: string
+      enum: [ADMIN, VENDEDOR]
+    AuthenticatedUser:
+      type: object
+      required: [id, username, fullName, role]
+      properties:
+        id:
+          type: integer
+          format: int64
+        username:
+          type: string
+        fullName:
+          type: string
+        role:
+          $ref: '#/components/schemas/UserRole'
+    User:
+      type: object
+      description: Nunca contiene contraseña ni passwordHash.
+      required: [id, username, fullName, role, active, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        username:
+          type: string
+        fullName:
+          type: string
+        role:
+          $ref: '#/components/schemas/UserRole'
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    LoginResponse:
+      type: object
+      required: [accessToken, refreshToken, tokenType, expiresIn, user]
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        tokenType:
+          type: string
+          const: Bearer
+        expiresIn:
+          type: integer
+          format: int64
+          example: 900
+        user:
+          $ref: '#/components/schemas/AuthenticatedUser'
+    RefreshSessionResponse:
+      type: object
+      required: [accessToken, refreshToken, tokenType, expiresIn]
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        tokenType:
+          type: string
+          const: Bearer
+        expiresIn:
+          type: integer
+          format: int64
+          example: 900
+    Category:
+      type: object
+      required: [id, name, active]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: [string, 'null']
+        active:
+          type: boolean
+    Product:
+      type: object
+      required: [id, name, price, categoryId, unitOfMeasure, active, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: [string, 'null']
+        barcode:
+          type: [string, 'null']
+          example: '7751234567890'
+        price:
+          type: number
+          format: double
+          example: 4.50
+        purchasePrice:
+          type: [number, 'null']
+          format: double
+          example: 3.00
+        grossMarginPercentage:
+          type: [number, 'null']
+          format: double
+          description: Margen bruto sobre el precio de venta, calculado como (venta - compra) / venta * 100.
+          example: 33.33
+        markupPercentage:
+          type: [number, 'null']
+          format: double
+          description: Recargo sobre el precio de compra, calculado como (venta - compra) / compra * 100.
+          example: 50.00
+        presentation:
+          type: [string, 'null']
+          maxLength: 30
+          example: LATA
+        packagingMaterial:
+          type: [string, 'null']
+          maxLength: 30
+          example: VIDRIO
+        contentQuantity:
+          type: [number, 'null']
+          maximum: 999999999.999
+          multipleOf: 0.001
+          example: 400.000
+        contentUnit:
+          type: [string, 'null']
+          maxLength: 10
+          example: GR
+        variant:
+          type: [string, 'null']
+          maxLength: 60
+          example: Talla G
+        unitsPerPackage:
+          type: [integer, 'null']
+          minimum: 1
+          example: 20
+        unitContentQuantity:
+          type: [number, 'null']
+          maximum: 999999999.999
+          multipleOf: 0.001
+          example: 355.000
+        unitContentUnit:
+          type: [string, 'null']
+          maxLength: 10
+          example: ML
+        categoryId:
+          type: integer
+          format: int64
+        unitOfMeasure:
+          $ref: '#/components/schemas/UnitOfMeasure'
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ProductPage:
+      type: object
+      required: [content, page, size, totalElements, totalPages]
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        page:
+          type: integer
+          minimum: 0
+        size:
+          type: integer
+          minimum: 1
+        totalElements:
+          type: integer
+          format: int64
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
+    UserPage:
+      type: object
+      required: [content, page, size, totalElements, totalPages]
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        page:
+          type: integer
+          minimum: 0
+        size:
+          type: integer
+          minimum: 1
+        totalElements:
+          type: integer
+          format: int64
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
+    LoginApiResponse:
+      type: object
+      required: [statusCode, message, data]
+      properties:
+        statusCode:
+          type: integer
+          enum: [200]
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/LoginResponse'
+    RefreshSessionApiResponse:
+      type: object
+      required: [statusCode, message, data]
+      properties:
+        statusCode:
+          type: integer
+          enum: [200]
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/RefreshSessionResponse'
+    AuthenticatedUserApiResponse:
+      type: object
+      required: [statusCode, message, data]
+      properties:
+        statusCode:
+          type: integer
+          enum: [200]
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/AuthenticatedUser'
+    UserApiResponse:
+      type: object
+      required: [statusCode, message, data]
+      properties:
+        statusCode:
+          type: integer
+          enum: [200, 201]
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/User'
+    UserPageApiResponse:
+      type: object
+      required: [statusCode, message, data]
+      properties:
+        statusCode:
+          type: integer
+          enum: [200]
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/UserPage'
+    EmptyApiResponse:
+      type: object
+      required: [statusCode, message, data]
+      properties:
+        statusCode:
+          type: integer
+          enum: [200]
+        message:
+          type: string
+        data:
+          type: 'null'
+    CategoryApiResponse:
+      type: object
+      required: [statusCode, message, data]
+      properties:
+        statusCode:
+          type: integer
+          enum: [201]
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/Category'
+    CategoryListApiResponse:
+      type: object
+      required: [statusCode, message, data]
+      properties:
+        statusCode:
+          type: integer
+          enum: [200]
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+    ProductApiResponse:
+      type: object
+      required: [statusCode, message, data]
+      properties:
+        statusCode:
+          type: integer
+          enum: [200, 201]
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/Product'
+    ProductPageApiResponse:
+      type: object
+      required: [statusCode, message, data]
+      properties:
+        statusCode:
+          type: integer
+          enum: [200]
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/ProductPage'
+    SaleApiRequest:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/SaleRequest'
+    SaleRequest:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          maxItems: 100
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/SaleItemInput'
+    SaleItemInput:
+      type: object
+      required: [productId, quantity]
+      properties:
+        productId:
+          type: integer
+          format: int64
+          minimum: 1
+        quantity:
+          type: number
+          exclusiveMinimum: 0
+          multipleOf: 0.001
+          maximum: 999999999.999
+          description: UND y PACK requieren un valor entero; KG y LT admiten hasta tres decimales.
+          example: 0.500
+    SaleStatus:
+      type: string
+      enum: [COMPLETED, CANCELLED]
+    SaleItem:
+      type: object
+      required: [productId, productName, quantity, unitPrice, subtotal]
+      properties:
+        productId:
+          type: integer
+          format: int64
+        productName:
+          type: string
+        productPresentation:
+          type: [string, 'null']
+          maxLength: 30
+          description: Copia histórica de la presentación al calcular o registrar la venta.
+          example: LATA
+        productPackagingMaterial:
+          type: [string, 'null']
+          maxLength: 30
+          description: Copia histórica del material del envase.
+          example: VIDRIO
+        productContentQuantity:
+          type: [number, 'null']
+          maximum: 999999999.999
+          multipleOf: 0.001
+          description: Copia histórica de la cantidad de contenido.
+          example: 400.000
+        productContentUnit:
+          type: [string, 'null']
+          maxLength: 10
+          description: Copia histórica de la unidad de contenido.
+          example: GR
+        productVariant:
+          type: [string, 'null']
+          maxLength: 60
+          description: Copia histórica de la variante del producto.
+          example: Talla G
+        productUnitsPerPackage:
+          type: [integer, 'null']
+          minimum: 1
+          description: Copia histórica de las unidades incluidas.
+          example: 20
+        productUnitContentQuantity:
+          type: [number, 'null']
+          maximum: 999999999.999
+          multipleOf: 0.001
+          description: Copia histórica del contenido de cada unidad.
+          example: 355.000
+        productUnitContentUnit:
+          type: [string, 'null']
+          maxLength: 10
+          description: Copia histórica de la unidad del contenido individual.
+          example: ML
+        quantity:
+          type: number
+          multipleOf: 0.001
+          example: 0.500
+        unitPrice:
+          type: number
+          multipleOf: 0.01
+          example: 4.00
+        subtotal:
+          type: number
+          multipleOf: 0.01
+          example: 2.00
+    SalePreview:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SaleItem'
+        total:
+          type: number
+          multipleOf: 0.01
+          example: 11.00
+    Sale:
+      type: object
+      required: [id, saleNumber, userId, status, total, items, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        saleNumber:
+          type: string
+          pattern: '^V-[0-9]{8,}$'
+          example: V-00001001
+        userId:
+          type: integer
+          format: int64
+        status:
+          $ref: '#/components/schemas/SaleStatus'
+        total:
+          type: number
+          multipleOf: 0.01
+          example: 11.00
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SaleItem'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    SaleListEntry:
+      type: object
+      description: Proyección ligera del historial; los detalles se consultan por ID.
+      required: [id, saleNumber, userId, status, total, createdAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        saleNumber:
+          type: string
+        userId:
+          type: integer
+          format: int64
+        status:
+          $ref: '#/components/schemas/SaleStatus'
+        total:
+          type: number
+          multipleOf: 0.01
+        createdAt:
+          type: string
+          format: date-time
+    SalePage:
+      type: object
+      required: [content, page, size, totalElements, totalPages]
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/SaleListEntry'
+        page:
+          type: integer
+          minimum: 0
+        size:
+          type: integer
+          minimum: 1
+        totalElements:
+          type: integer
+          format: int64
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
+    SaleSummary:
+      type: object
+      required: [totalSales, totalAmount, currency]
+      properties:
+        totalSales:
+          type: integer
+          format: int64
+          minimum: 0
+        totalAmount:
+          type: number
+          multipleOf: 0.01
+          example: 350.50
+        currency:
+          type: string
+          enum: [PEN]
+    SalePreviewApiResponse:
+      type: object
+      required: [statusCode, message, data]
+      properties:
+        statusCode:
+          type: integer
+          enum: [200]
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/SalePreview'
+    SaleApiResponse:
+      type: object
+      required: [statusCode, message, data]
+      properties:
+        statusCode:
+          type: integer
+          enum: [200, 201]
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/Sale'
+    SalePageApiResponse:
+      type: object
+      required: [statusCode, message, data]
+      properties:
+        statusCode:
+          type: integer
+          enum: [200]
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/SalePage'
+    SaleSummaryApiResponse:
+      type: object
+      required: [statusCode, message, data]
+      properties:
+        statusCode:
+          type: integer
+          enum: [200]
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/SaleSummary'
+    ValidationError:
+      type: object
+      required: [field, message]
+      properties:
+        field:
+          type: string
+        message:
+          type: string
+    ErrorDetail:
+      type: object
+      required: [code, timestamp, path]
+      properties:
+        code:
+          type: string
+          description: Código estable y legible por clientes.
+        timestamp:
+          type: string
+          format: date-time
+        path:
+          type: string
+        traceId:
+          type: string
+          description: Identificador de correlación, cuando esté disponible.
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError'
+    ErrorApiResponse:
+      type: object
+      required: [statusCode, message, data]
+      properties:
+        statusCode:
+          type: integer
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/ErrorDetail'
+    SystemInfoResponse:
+      type: object
+      required: [application, status]
+      properties:
+        application:
+          type: string
+          example: minimarket-api
+        status:
+          type: string
+          enum: [UP]
+    SystemInfoApiResponse:
+      type: object
+      required: [statusCode, message, data]
+      properties:
+        statusCode:
+          type: integer
+          enum: [200]
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/SystemInfoResponse'

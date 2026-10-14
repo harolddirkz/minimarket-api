@@ -1,0 +1,16 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    clean-disabled: true
+
+logging:
+  level:
+    root: WARN
+    com.minimarket: INFO
+
+security:
+  documentation-public: true
+  jwt:
+    secret-base64: dGVzdC1vbmx5LW1pbmltYXJrZXQtand0LXNlY3JldC0zMi1ieXRlcw==
